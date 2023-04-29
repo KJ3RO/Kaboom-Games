@@ -68,28 +68,31 @@ const LEVELS = [
 ];
 
 const levelConf = {
+  // grid size
   width: 16,
   height: 16,
   pos: vec2(0, 0),
+
+  // define each object as a list of components
   "=": () => [
     sprite("ground"),
     area(),
     solid(),
     origin("bot"),
-    "ground",
+    "ground"
   ],
   "-": () => [
     sprite("brick"),
     area(),
     solid(),
     origin("bot"),
-    "brick",
+    "brick"
   ],
   "H": () => [
     sprite("castle"),
     area({ width: 1, height: 240 }),
     origin("bot"),
-    "castle",
+    "castle"
   ],
   "?": () => [
     sprite("questionBox"),
@@ -97,7 +100,7 @@ const levelConf = {
     solid(),
     origin("bot"),
     'questionBox',
-    'coinBox',
+    'coinBox'
   ],
   "b": () => [
     sprite("questionBox"),
@@ -105,7 +108,7 @@ const levelConf = {
     solid(),
     origin("bot"),
     'questionBox',
-    'mushyBox',
+    'mushyBox'
   ],
   "!": () => [
     sprite("emptyBox"),
@@ -113,17 +116,19 @@ const levelConf = {
     solid(),
     bump(),
     origin("bot"),
-    'emptyBox',
+    'emptyBox'
   ],
   "c": () => [
     sprite("coin"),
     area(),
     solid(),
     bump(64, 8),
+    patrol(10000),
+    body(),
     cleanup(),
-    lifespan(0.4, { fade: 0.01 }),
+    lifespan(1.5, { fade: 0.01 }),
     origin("bot"),
-    "coin",
+    "coin"
   ],
   "M": () => [
     sprite("bigMushy"),
@@ -133,21 +138,21 @@ const levelConf = {
     body(),
     cleanup(),
     origin("bot"),
-    "bigMushy",
+    "bigMushy"
   ],
   "|": () => [
     sprite("pipeBottom"),
     area(),
     solid(),
     origin("bot"),
-    "pipe",
+    "pipe"
   ],
   "_": () => [
     sprite("pipeTop"),
     area(),
     solid(),
     origin("bot"),
-    "pipe",
+    "pipe"
   ],
   "E": () => [
     sprite("enemies", { anim: 'Walking' }),
@@ -157,7 +162,8 @@ const levelConf = {
     patrol(50),
     enemy(),
     origin("bot"),
-    "badGuy",
+    health(4),
+    "badGuy"
   ],
   "p": () => [
     sprite("mario", { frame: 0 }),
@@ -167,11 +173,12 @@ const levelConf = {
     mario(),
     bump(150, 20, false),
     origin("bot"),
-    "player",
-  ],
+    "player"
+  ]
 }
 
 scene("start", () => {
+
   add([
     text("Press enter to start", { size: 24 }),
     pos(vec2(160, 120)),
@@ -183,6 +190,7 @@ scene("start", () => {
     go("game");
   });
 });
+
 
 scene("game", (levelNumber = 0) => {
   layers([
@@ -196,14 +204,14 @@ scene("game", (levelNumber = 0) => {
   add([
     sprite("cloud"),
     pos(20, 50),
-    layer("bg"),
+    layer("bg")
   ]);
 
   add([
     sprite("hill"),
     pos(32, 208),
     layer("bg"),
-    origin("bot"),
+    origin("bot")
   ]);
 
   add([
@@ -221,21 +229,7 @@ scene("game", (levelNumber = 0) => {
     color(255, 255, 255),
     origin("center"),
     layer("ui"),
-    lifespan(1, { fade: 0.5 }),
-  ]);
-
-  const debugText1 = add([text("", { size: 20 }),
-  pos(vec2(0, height() - 50)),
-  color(255, 255, 255),
-  origin("left"),
-  layer("ui"),
-  ]);
-
-  const debugText2 = add([text("", { size: 20 }),
-  pos(vec2(0, height() - 30)),
-  color(255, 255, 255),
-  origin("left"),
-  layer("ui"),
+    lifespan(1, { fade: 0.5 })
   ]);
 
   const player = level.spawn("p", 0, 10);
@@ -249,7 +243,9 @@ scene("game", (levelNumber = 0) => {
   onKeyDown("left", () => {
     if (player.isFrozen) return;
     player.flipX(true);
-    if (toScreen(player.pos).x > 8) player.move(-SPEED, 0);
+    if (toScreen(player.pos).x > 8) {
+      player.move(-SPEED, 0);
+    }
   });
 
   onKeyDown("space", () => {
@@ -259,9 +255,20 @@ scene("game", (levelNumber = 0) => {
     }
   });
 
+
   onKeyPress("r", () => {
     go("start");
-  });
+  })
+
+  onCollide("missile", "enemy", (missile, enemy) => {
+		destroy(missile);
+		enemy.hurt(1);
+	})
+
+  on("death", "enemy", (enemy) => {
+		destroy(enemy)
+		addKaboom(enemy.pos)
+	})
 
   player.onUpdate(() => {
     var currCam = camPos();
@@ -279,6 +286,7 @@ scene("game", (levelNumber = 0) => {
     if (player.pos.y > height() - 16) {
       killed();
     }
+
   });
 
   let canSquash = false;
@@ -288,7 +296,8 @@ scene("game", (levelNumber = 0) => {
 
     if (canSquash) {
       baddy.squash();
-    } else {
+    }
+    else {
       if (player.isBig) {
         player.smaller();
         every("badGuy", (obj) => {
@@ -299,7 +308,7 @@ scene("game", (levelNumber = 0) => {
         wait(1, () => {
           player.isInvincible = false;
           player.opacity = 1.0;
-          every("budGuy", (obj) => {
+          every("badGuy", (obj) => {
             obj.use("body");
             obj.use("solid");
           });
@@ -329,7 +338,6 @@ scene("game", (levelNumber = 0) => {
       origin("center"),
       layer("ui"),
     ]);
-
     wait(1, () => {
       player.use("body");
       let nextLevel = levelNumber + 1;
@@ -338,8 +346,8 @@ scene("game", (levelNumber = 0) => {
       } else {
         go("game", nextLevel);
       }
-    });
-  });
+    })
+  })
 
   player.on("headbutt", (obj) => {
     if (obj.is("questionBox")) {
@@ -357,9 +365,8 @@ scene("game", (levelNumber = 0) => {
   });
 
   function killed() {
-    if (player.isAlive == false) {
+    if (player.isAlive == false)
       return;
-    }
     player.die();
     add([
       text("Game Over :(", { size: 24 }),
@@ -370,7 +377,7 @@ scene("game", (levelNumber = 0) => {
     ]);
     wait(2, () => {
       go("start");
-    });
+    })
   }
 });
 
@@ -385,13 +392,12 @@ function patrol(distance = 100, speed = 50, dir = 1) {
       this.on("collide", (obj, coll) => {
         if (coll.isLeft() || coll.isRight()) {
           if (obj.is("player")) {
-            // debug.log(obj.tag);
+            //debug.log(obj.tag);
           }
           dir = -dir;
         }
       });
     },
-
     update() {
       if (Math.abs(this.pos.x - this.startingPos.x) >= distance) {
         dir = -dir;
@@ -404,7 +410,7 @@ function patrol(distance = 100, speed = 50, dir = 1) {
 function enemy() {
   return {
     id: "enemy",
-    requre: ["pos", "area", "sprite", "patrol",],
+    require: ["pos", "area", "sprite", "patrol"],
     isAlive: true,
     update() {
 
@@ -446,14 +452,14 @@ function bump(offset = 8, speed = 2, stopAtOrigin = true) {
     bump() {
       this.bumped = true;
       this.origPos = this.pos.y;
-    },
+    }
   };
 }
 
 function mario() {
   return {
     id: "mario",
-    requre: ["body", "area", "sprite", "opacity", "bump",],
+    require: ["body", "area", "sprite", "opacity", "bump"],
     smallAnimation: "Running",
     bigAnimation: "RunningBig",
     smallStopFrame: 0,
@@ -466,9 +472,10 @@ function mario() {
     isAlive: true,
     update() {
       if (this.isFrozen) {
-        // this.standing();
+        //this.standing();
         return;
       }
+
       if (!this.grounded()) {
         this.jumping();
       } else {
